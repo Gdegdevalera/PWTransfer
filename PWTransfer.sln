@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26403.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PWTransfer", "PWTransfer\PWTransfer.csproj", "{C1D4A2EB-218E-45B5-9D1B-23C0DAFAB8C5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService", "AuthService\AuthService.csproj", "{FD7ABAFD-172B-4019-BEAE-C12688657340}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C1D4A2EB-218E-45B5-9D1B-23C0DAFAB8C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1D4A2EB-218E-45B5-9D1B-23C0DAFAB8C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1D4A2EB-218E-45B5-9D1B-23C0DAFAB8C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1D4A2EB-218E-45B5-9D1B-23C0DAFAB8C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD7ABAFD-172B-4019-BEAE-C12688657340}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD7ABAFD-172B-4019-BEAE-C12688657340}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD7ABAFD-172B-4019-BEAE-C12688657340}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD7ABAFD-172B-4019-BEAE-C12688657340}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
