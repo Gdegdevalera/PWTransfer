@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace PWTransfer.Data
 {
@@ -6,8 +7,8 @@ namespace PWTransfer.Data
     {
         public DbSet<Account> Accounts { get; set; }
 
-        public DbSet<Action> LastActions { get; set; }
+        public DbSet<AccountChange> LastAccountChanges { get; set; }
 
-        public DbSet<ActionLog> ActionLog { get; set; }
+        public DbSet<ActionLog> ActionLogs { get; set; }
     }
 }

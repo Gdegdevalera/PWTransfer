@@ -3,14 +3,16 @@ using System;
 
 namespace PWTransfer.Data
 {
-    public class Action
+    public class AccountChange
     {
         public long Id { get; set; }
 
-        public UserId UserId { get; set; }
+        public UserId AccountId { get; set; }
 
         public Decimal Value { get; set; }
-        
+
         public long ActionLogId { get; set; }
+
+        public virtual ActionLog ActionLog { get; set; }
     }
 }
