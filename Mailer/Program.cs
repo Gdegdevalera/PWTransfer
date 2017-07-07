@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using Microsoft.AspNetCore.Hosting;
 
-namespace PWTransfer
+namespace Mailer
 {
     public class Program
     {
