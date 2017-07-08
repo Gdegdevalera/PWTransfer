@@ -7,7 +7,7 @@ namespace Mailer.Controllers
     {
         public IActionResult Send(Notification notification)
         {
-            return StatusCode(200);
+            return Ok();
         }
     }
 }

@@ -83,7 +83,7 @@ namespace PWTransfer.Controllers
                 await _accountDbContext.SaveChangesAsync();
                 scope.Complete();
 
-                return StatusCode(200);
+                return Ok();
             }
         }
 
