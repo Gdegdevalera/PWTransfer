@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Shared;
 using PWTransfer.Data;
-using System.Transactions;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
@@ -12,17 +11,17 @@ using Microsoft.AspNetCore.Http;
 namespace PWTransfer.Controllers
 {
     [Authorize]
-    public class TransferController : Controller
+    public class AccountController : Controller
     {
         private readonly AccountDbContext _accountDbContext;
-        private readonly ILogger<TransferController> _logger;
+        private readonly ILogger<AccountController> _logger;
 
         private const decimal InitialValue = 500;
 
-        public TransferController(AccountDbContext accountDbContext, ILoggerFactory loggerFactory)
+        public AccountController(AccountDbContext accountDbContext, ILoggerFactory loggerFactory)
         {
             _accountDbContext = accountDbContext;
-            _logger = loggerFactory.CreateLogger<TransferController>();
+            _logger = loggerFactory.CreateLogger<AccountController>();
         }
 
         [Route("/create")]
@@ -126,33 +125,6 @@ namespace PWTransfer.Controllers
 
                 return Ok();
             }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Flush()
-        {
-            var accounts = _accountDbContext.LastAccountChanges.Select(x => x.AccountId).Distinct().ToList();
-            var report = accounts.ToDictionary(x => x, _ => 0);
-
-            foreach (var accountId in accounts)
-            {
-                using (var transaction = await _accountDbContext.Database.BeginTransactionAsync())
-                {
-                    var changes = _accountDbContext.LastAccountChanges.Where(x => x.AccountId == accountId).ToList();
-                    var account = _accountDbContext.Accounts.First(x => x.Id == accountId);
-
-                    changes.ForEach(change => account.Value += change.Value);
-
-                    _accountDbContext.LastAccountChanges.RemoveRange(changes);
-
-                    await _accountDbContext.SaveChangesAsync();
-                    transaction.Commit();
-
-                    report[accountId] = changes.Count();
-                }
-            }
-
-            return Json(report);
         }
 
         private UserId GetUserId()

@@ -7,12 +7,12 @@ using Microsoft.AspNetCore.Http;
 
 namespace AuthService.Controllers
 {
-    public class AuthController : Controller
+    public class TokenController : Controller
     {
         private readonly UserDbContext _userDbContext;
         private readonly IJwtGenerator _jwtGenerator;
 
-        public AuthController(UserDbContext userDbContext, IJwtGenerator jwtGenerator)
+        public TokenController(UserDbContext userDbContext, IJwtGenerator jwtGenerator)
         {
             _userDbContext = userDbContext;
             _jwtGenerator = jwtGenerator;
