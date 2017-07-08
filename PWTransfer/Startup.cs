@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using PWTransfer.Data;
+using PWTransfer.Service;
 
 namespace PWTransfer
 {
@@ -28,6 +29,8 @@ namespace PWTransfer
                    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddMvc();
+
+            services.AddSingleton(new AuthService(Configuration["AuthService:BaseUrl"]));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
