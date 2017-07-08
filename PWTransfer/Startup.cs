@@ -5,7 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using PWTransfer.Data;
-using PWTransfer.Service;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace PWTransfer
 {
@@ -29,8 +30,6 @@ namespace PWTransfer
                    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddMvc();
-
-            services.AddSingleton(new AuthService(Configuration["AuthService:BaseUrl"]));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
@@ -38,12 +37,24 @@ namespace PWTransfer
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            app.UseMvc(routes =>
+            app.UseJwtBearerAuthentication(new JwtBearerOptions
             {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Transfer}/{action=Index}/{id?}");
+                AutomaticAuthenticate = true,
+                AutomaticChallenge = true,
+                TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateLifetime = true,
+                    ValidateAudience = false,
+                    ValidateIssuer = false,
+
+                    // установка ключа безопасности
+                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("asdkflju34ht734hg78vhasvdyq9364vavlajvn36qftqogw")),
+                    // валидация ключа безопасности
+                    ValidateIssuerSigningKey = true,
+                }
             });
+
+            app.UseMvc();
         }
     }
 }

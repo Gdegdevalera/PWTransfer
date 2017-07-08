@@ -23,9 +23,7 @@ namespace AuthService.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var existUser = _userDbContext.Users.FirstOrDefault(x => x.Email == model.Email);
-
-            if (existUser != null)
+            if (_userDbContext.Users.Any(x => x.Email == model.Email))
                 return StatusCode(StatusCodes.Status409Conflict);
 
             _userDbContext.Users.Add(new User

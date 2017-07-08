@@ -1,62 +1,103 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Shared;
 using PWTransfer.Data;
-using PWTransfer.Service;
 using System.Transactions;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 
 namespace PWTransfer.Controllers
 {
+    [Authorize]
     public class TransferController : Controller
     {
         private readonly AccountDbContext _accountDbContext;
-        private readonly IAuthService _authService;
+        private readonly ILogger<TransferController> _logger;
 
-        public TransferController(AccountDbContext accountDbContext, IAuthService authService)
+        private const decimal InitialValue = 500;
+
+        public TransferController(AccountDbContext accountDbContext, ILoggerFactory loggerFactory)
         {
             _accountDbContext = accountDbContext;
-            _authService = authService;
+            _logger = loggerFactory.CreateLogger<TransferController>();
         }
 
-        public async Task<IActionResult> Info()
+        [Route("/create")]
+        public async Task<IActionResult> Create()
         {
-            var accountId = await _authService.GetUserId();
+            var accountId = GetUserId();
 
+            if (_accountDbContext.Accounts.Any(x => x.Id == accountId))
+                return StatusCode(StatusCodes.Status409Conflict);
+
+            _accountDbContext.Accounts.Add(new Account
+            {
+                Id = accountId,
+                Value = InitialValue
+            });
+
+            await _accountDbContext.SaveChangesAsync();
+            return Ok();
+        }
+
+        [Route("/info")]
+        public IActionResult Info()
+        {
+            var accountId = GetUserId();
+
+            var accountInfo = _accountDbContext.Accounts
+                .Select(x => new AccountInfo { UserId = x.Id, Value = x.Value })
+                .FirstOrDefault(x => x.UserId == accountId);
+
+            if (accountInfo == null)
+                return NotFound();
+
+            // It's important to fetch changes with account value by single query
+            // Because flush operation can be executed between different queries
             var changes = (from account in _accountDbContext.Accounts
                            join change in _accountDbContext.LastAccountChanges
-                           on account.Id equals change.AccountId
+                                on account.Id equals change.AccountId
                            where account.Id == accountId
                            select new
                            {
                                account.Id,
                                account.Value,
                                Change = change.Value
-                           }).AsEnumerable();
+                           }).ToList();
 
-            var info = changes.Aggregate(new AccountInfo(), (accountInfo, change) =>
-                        {
-                            if (accountInfo.UserId == UserId.Unknown)
+            if (changes.Any())
+            {
+                var info = changes.Aggregate(new AccountInfo(), (accumulator, change) =>
                             {
-                                accountInfo.UserId = change.Id;
-                                accountInfo.Value = change.Value;
-                            }
+                                if (accumulator.UserId == UserId.Unknown)
+                                {
+                                    accumulator.UserId = change.Id;
+                                    accumulator.Value = change.Value;
+                                }
 
-                            accountInfo.Value += change.Change;
+                                accumulator.Value += change.Change;
 
-                            return accountInfo;
-                        });
+                                return accumulator;
+                            });
 
-            return Json(info);
+                return Json(info);
+            }
+            else
+            {
+                return Json(accountInfo);
+            }
         }
 
+        [Route("/send")]
         [HttpPost]
         public async Task<IActionResult> Send(TransferAction action)
         {
-            var sender = await _authService.GetUserId();
+            var sender = GetUserId();
 
-            using (var scope = new TransactionScope(TransactionScopeOption.Required, DefaultTransactionOptions.Default))
+            using (var transaction = await _accountDbContext.Database.BeginTransactionAsync())
             {
                 var actionLog = _accountDbContext.ActionLogs.Add(new ActionLog
                 {
@@ -81,7 +122,7 @@ namespace PWTransfer.Controllers
                 });
 
                 await _accountDbContext.SaveChangesAsync();
-                scope.Complete();
+                transaction.Commit();
 
                 return Ok();
             }
@@ -95,7 +136,7 @@ namespace PWTransfer.Controllers
 
             foreach (var accountId in accounts)
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.Required, DefaultTransactionOptions.Default))
+                using (var transaction = await _accountDbContext.Database.BeginTransactionAsync())
                 {
                     var changes = _accountDbContext.LastAccountChanges.Where(x => x.AccountId == accountId).ToList();
                     var account = _accountDbContext.Accounts.First(x => x.Id == accountId);
@@ -105,13 +146,26 @@ namespace PWTransfer.Controllers
                     _accountDbContext.LastAccountChanges.RemoveRange(changes);
 
                     await _accountDbContext.SaveChangesAsync();
-                    scope.Complete();
+                    transaction.Commit();
 
                     report[accountId] = changes.Count();
                 }
             }
 
             return Json(report);
+        }
+
+        private UserId GetUserId()
+        {
+            try
+            {
+                return (UserId)long.Parse(User.Claims.Single(x => x.Type == "userId").Value);
+            }
+            catch 
+            {
+                _logger.LogError("Invalid JWT found. Can't extract UserId");
+                throw;
+            }
         }
     }
 }
