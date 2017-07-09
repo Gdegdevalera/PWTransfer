@@ -7,6 +7,7 @@ using System.Net;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using System.Data.SqlClient;
+using System;
 
 namespace PWTransfer.Tests
 {
@@ -47,6 +48,7 @@ namespace PWTransfer.Tests
                 }
                 catch
                 {
+                    Console.WriteLine("error");
                     return;
                 }
 
@@ -59,7 +61,7 @@ namespace PWTransfer.Tests
                         INNER JOIN sys.schemas s ON p.[schema_id] = s.[schema_id]
                             WHERE p.[type] = 'U'
                                 AND is_ms_shipped = 0
-                                AND p.Name not like '_%')
+                                AND p.Name <> '__EFMigrationsHistory')
                         SELECT 'TRUNCATE TABLE ' + Name sql FROM tableNames
 
                     OPEN tableCursor
