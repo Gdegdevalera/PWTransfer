@@ -1,7 +1,7 @@
-﻿using Shared;
+﻿using AccountService.Models;
 using System;
 
-namespace PWTransfer.Data
+namespace AccountService.Data
 {
     public class AccountChange
     {

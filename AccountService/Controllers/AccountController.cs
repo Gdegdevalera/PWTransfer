@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Shared;
-using PWTransfer.Data;
+using AccountService.Data;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using AccountService.Models;
 
-namespace PWTransfer.Controllers
+namespace AccountService.Controllers
 {
     [Authorize]
     public class AccountController : Controller

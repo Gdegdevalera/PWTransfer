@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace PWTransfer.Data
+namespace AccountService.Data
 {
     public class AccountDbContext : DbContext
     {

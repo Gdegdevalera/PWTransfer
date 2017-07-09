@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using PWTransfer.Data;
-using System.Collections.Generic;
+using AccountService.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PWTransfer.Controllers
+namespace AccountService.Controllers
 {
     public class FlushController : Controller
     {
