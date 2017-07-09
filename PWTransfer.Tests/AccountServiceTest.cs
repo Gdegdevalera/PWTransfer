@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Hosting;
 using System.Threading.Tasks;
 using System.Net;
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
+using System.Data.SqlClient;
 
 namespace PWTransfer.Tests
 {
@@ -18,6 +20,10 @@ namespace PWTransfer.Tests
 
         public AccountServiceTest()
         {
+            var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+            ClearDatabase(configuration.GetConnectionString("AccountService"));
+            ClearDatabase(configuration.GetConnectionString("AuthService"));
+
             _accountServer = new TestServer(
                 new WebHostBuilder()
                     .UseStartup<AccountService.Startup>());
@@ -29,6 +35,46 @@ namespace PWTransfer.Tests
                     .UseStartup<AuthService.Startup>());
 
             _auth = _authServer.CreateClient();
+        }
+
+        private void ClearDatabase(string connectionString)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                try
+                {
+                    connection.Open();
+                }
+                catch
+                {
+                    return;
+                }
+
+                var command = connection.CreateCommand();
+                command.CommandText = @"
+                    DECLARE @sql nvarchar(max)
+
+                    DECLARE tableCursor CURSOR FOR
+                        WITH tableNames AS (SELECT p.Name FROM sys.objects p
+                        INNER JOIN sys.schemas s ON p.[schema_id] = s.[schema_id]
+                            WHERE p.[type] = 'U'
+                                AND is_ms_shipped = 0
+                                AND p.Name not like '_%')
+                        SELECT 'TRUNCATE TABLE ' + Name sql FROM tableNames
+
+                    OPEN tableCursor
+                    FETCH NEXT FROM tableCursor INTO @sql
+                    WHILE @@fetch_status = 0
+                    BEGIN
+                        PRINT @sql
+                        EXEC(@sql)
+                        FETCH NEXT FROM tableCursor INTO @sql
+                    END
+                    CLOSE tableCursor
+
+                    DEALLOCATE tableCursor";
+                command.ExecuteNonQuery();
+            }
         }
 
         [Theory]
