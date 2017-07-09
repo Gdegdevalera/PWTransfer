@@ -26,7 +26,7 @@ namespace AuthService
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<UserDbContext>(options =>
-                      options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+                      options.UseSqlServer(Configuration.GetConnectionString("AuthService")));
                         
             services.AddSingleton<IJwtGenerator>(new JwtGenerator(Configuration["Auth:SecurityKey"]));
             services.AddMvc();

@@ -25,6 +25,7 @@ namespace AccountService.Controllers
         }
 
         [Route("/create")]
+        [HttpPost]
         public async Task<IActionResult> Create()
         {
             var accountId = GetUserId();

@@ -27,12 +27,11 @@ namespace AccountService
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<AccountDbContext>(options =>
-                      options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+                      options.UseSqlServer(Configuration.GetConnectionString("AccountService")));
 
             services.AddMvc();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
@@ -48,9 +47,7 @@ namespace AccountService
                     ValidateAudience = false,
                     ValidateIssuer = false,
 
-                    // установка ключа безопасности
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("asdkflju34ht734hg78vhasvdyq9364vavlajvn36qftqogw")),
-                    // валидация ключа безопасности
                     ValidateIssuerSigningKey = true,
                 }
             });
