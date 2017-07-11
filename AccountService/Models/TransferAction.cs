@@ -8,16 +8,4 @@ namespace AccountService.Models
 
         public Decimal Amount { get; set; }
     }
-
-    public enum UserId : long
-    {
-        Unknown = 0
-    }
-
-    public class AccountInfo
-    {
-        public UserId UserId { get; set; }
-
-        public Decimal Value { get; set; }
-    }
 }

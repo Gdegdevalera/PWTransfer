@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26403.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{2AF4F993-55E8-453D-98B9-7941D7B7FB23}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mailer", "Mailer\Mailer.csproj", "{9F17762E-D4D9-454E-9E11-39376B18D0A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService", "AuthService\AuthService.csproj", "{11938D68-2403-4BDE-B146-1013763012D5}"
@@ -19,10 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2AF4F993-55E8-453D-98B9-7941D7B7FB23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2AF4F993-55E8-453D-98B9-7941D7B7FB23}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2AF4F993-55E8-453D-98B9-7941D7B7FB23}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2AF4F993-55E8-453D-98B9-7941D7B7FB23}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9F17762E-D4D9-454E-9E11-39376B18D0A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9F17762E-D4D9-454E-9E11-39376B18D0A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F17762E-D4D9-454E-9E11-39376B18D0A9}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -93,31 +93,38 @@ namespace AccountService.Controllers
 
         [Route("/send")]
         [HttpPost]
-        public async Task<IActionResult> Send(TransferAction action)
+        public async Task<IActionResult> Send(TransferAction model)
         {
+            if (Invalid(model.Amount))
+                return BadRequest();
+
             var sender = GetUserId();
+            var receiverExists = _accountDbContext.Accounts.Any(x => x.Id == model.Receiver);
+
+            if (model.Receiver == sender || !receiverExists)
+                return BadRequest();
 
             using (var transaction = await _accountDbContext.Database.BeginTransactionAsync())
             {
                 var actionLog = _accountDbContext.ActionLogs.Add(new ActionLog
                 {
                     Sender = sender,
-                    Receiver = action.Receiver,
-                    Amount = action.Amount,
-                    DateUtc = DateTime.UtcNow                    
+                    Receiver = model.Receiver,
+                    Amount = model.Amount,
+                    DateUtc = DateTime.UtcNow
                 });
 
                 _accountDbContext.LastAccountChanges.Add(new AccountChange
                 {
                     AccountId = sender,
-                    Value = -action.Amount,
+                    Value = -model.Amount,
                     ActionLog = actionLog.Entity
                 });
 
                 _accountDbContext.LastAccountChanges.Add(new AccountChange
                 {
-                    AccountId = action.Receiver,
-                    Value = action.Amount,
+                    AccountId = model.Receiver,
+                    Value = model.Amount,
                     ActionLog = actionLog.Entity
                 });
 
@@ -139,6 +146,14 @@ namespace AccountService.Controllers
                 _logger.LogError("Invalid JWT found. Can't extract UserId");
                 throw;
             }
+        }
+
+        private bool Invalid(decimal amount)
+        {
+            if (amount <= 0)
+                return true;
+
+            return amount != Math.Round(amount, 2, MidpointRounding.AwayFromZero);
         }
     }
 }

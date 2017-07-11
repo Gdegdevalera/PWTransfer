@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using AccountService.Models;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -8,19 +10,25 @@ namespace PWTransfer.Tests
 {
     public static class HttpClientExtensions
     {
-        public static async Task<long> ToLong(this Task<string> response)
+        public static async Task<UserId> ToUserId(this Task<string> response)
         {
-            return long.Parse(await response);
+            return (UserId)long.Parse(await response);
         }
 
         public static async Task<T> Content<T>(this Task<HttpResponseMessage> response)
         {
-            return JsonConvert.DeserializeObject<T>(await response.Content());
+            return JsonConvert.DeserializeObject<T>(await response.ReadString());
         }
 
-        public static async Task<string> Content(this Task<HttpResponseMessage> response)
+        public static async Task<R> Map<T, R>(this Task<T> content, Func<T, R> mapper)
         {
-            return await (await response).Content.ReadAsStringAsync();
+            return mapper(await content);
+        }
+
+        public static async Task<string> ReadString(this Task<HttpResponseMessage> response)
+        {
+            var mat = await response;
+            return await mat.Content.ReadAsStringAsync();
         }
 
         public static async Task<HttpResponseMessage> PostAsync(this HttpClient client, string route, object body)

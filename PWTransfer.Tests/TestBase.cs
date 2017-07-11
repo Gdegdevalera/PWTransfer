@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using AccountService.Models;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
-using RestSharp;
 using Scrypt;
 using System;
 using System.Collections.Generic;
@@ -40,6 +40,13 @@ namespace PWTransfer.Tests
             Email = "test2@test.test"
         };
 
+        protected readonly TestUser TestUser_3 = new TestUser
+        {
+            Name = "Test user 3",
+            Password = "13qw2387rt29f",
+            Email = "test3@test.test"
+        };
+
         public TestBase()
         {
             Configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
@@ -71,9 +78,28 @@ namespace PWTransfer.Tests
             Account.DefaultRequestHeaders.Add("Authorization", "Bearer " + user.Token);
         }
 
-        protected async Task<long> CreateAccount()
+        protected Task<UserId> CreateAccount()
         {
-            return await Account.PostAsync("/create", null).Content().ToLong();
+            return Account.PostAsync("/create", null).ReadString().ToUserId();
+        }
+
+        protected Task<decimal> GetAccountValue()
+        {
+            return Account.GetAsync("/info").Content<AccountInfo>().Map(x => x.Value);
+        }
+
+        protected Task<Dictionary<UserId, int>> Flush()
+        {
+            return Account.PostAsync("/flush", null).Content<Dictionary<UserId, int>>();
+        }
+
+        protected Task<HttpResponseMessage> Send(UserId receiver, decimal amount)
+        {
+            return Account.PostFormAsync("/send", new Dictionary<string, string>
+            {
+                { "Receiver", receiver.ToString() },
+                { "Amount", amount.ToString() },
+            });
         }
 
         private async Task<string> GetToken(string userEmail, string password)

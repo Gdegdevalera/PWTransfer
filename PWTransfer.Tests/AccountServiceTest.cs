@@ -2,6 +2,8 @@ using Xunit;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Net;
+using System.Collections.Generic;
+using AccountService.Models;
 
 namespace PWTransfer.Tests
 {
@@ -39,33 +41,134 @@ namespace PWTransfer.Tests
             await AuthorizeAs(TestUser_2);
             var accountId_2 = await CreateAccount();
             
-            var response = await Account.PostAsync("/send", new TransferAction
+            var response = await Account.PostFormAsync("/send", new Dictionary<string, string>
             {
-                Receiver = accountId_1,
-                Amount = 10,
+                { "Receiver", accountId_1.ToString() },
+                { "Amount", 10m.ToString() },
             });
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-            var info_2 = await Account.GetAsync("/info").Content<AccountInfo>();
-            Assert.Equal(490, info_2.Value);
+            Assert.Equal(490m, await GetAccountValue());
 
             await AuthorizeAs(TestUser_1);
-            var info_1 = await Account.GetAsync("/info").Content<AccountInfo>();
-            Assert.Equal(510, info_2.Value);
+            Assert.Equal(510m, await GetAccountValue());
         }
-    }
 
-    public class AccountInfo
-    {
-        public long UserId { get; set; }
+        [Fact]
+        public async Task TransferPWCents()
+        {
+            await AuthorizeAs(TestUser_1);
+            var accountId_1 = await CreateAccount();
 
-        public decimal Value { get; set; }
-    }
+            await AuthorizeAs(TestUser_2);
+            var accountId_2 = await CreateAccount();
 
-    public class TransferAction
-    {
-        public long Receiver { get; set; }
+            var response = await Send(accountId_1, 0.01m);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        public decimal Amount { get; set; }
+            Assert.Equal(499.99m, await GetAccountValue());
+
+            await AuthorizeAs(TestUser_1);
+            Assert.Equal(500.01m, await GetAccountValue());
+        }
+
+        [Theory]
+        [InlineData(1.001)]
+        [InlineData(1.009)]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public async Task TryTransferInvalid(decimal amount)
+        {
+            await AuthorizeAs(TestUser_1);
+            var accountId_1 = await CreateAccount();
+
+            await AuthorizeAs(TestUser_2);
+            var accountId_2 = await CreateAccount();
+
+            var response = await Send(accountId_1, amount);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task TrySendToSelf()
+        {
+            await AuthorizeAs(TestUser_1);
+            var accountId = await CreateAccount();
+
+            var response = await Send(accountId, 1);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task TrySendToUnknown()
+        {
+            await AuthorizeAs(TestUser_1);
+            var accountId = await CreateAccount();
+
+            var response = await Send((UserId)8, 1);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task FlushChanges()
+        {
+            await AuthorizeAs(TestUser_1);
+            var accountId_1 = await CreateAccount();
+
+            await AuthorizeAs(TestUser_2);
+            var accountId_2 = await CreateAccount();
+
+            await Send(accountId_1, 1m);
+            await Send(accountId_1, 100m);
+
+            await AuthorizeAs(TestUser_1);
+            await Send(accountId_2, 10m);
+
+            var flushReport = await Flush();
+            Assert.Equal(3, flushReport[accountId_1]);
+            Assert.Equal(3, flushReport[accountId_2]);
+
+            Assert.Equal(591m, await GetAccountValue());
+
+            await AuthorizeAs(TestUser_2);
+            Assert.Equal(409m, await GetAccountValue());
+
+            Assert.Equal(0, (await Flush()).Count);
+        }
+
+        [Fact]
+        public async Task FlushTriplet()
+        {
+            await AuthorizeAs(TestUser_1);
+            var accountId_1 = await CreateAccount();
+
+            await AuthorizeAs(TestUser_2);
+            var accountId_2 = await CreateAccount();
+
+            await AuthorizeAs(TestUser_3);
+            var accountId_3 = await CreateAccount();
+
+            await Send(accountId_1, 1m);
+
+            await AuthorizeAs(TestUser_1);
+            await Send(accountId_2, 2m);
+
+            await AuthorizeAs(TestUser_2);
+            await Send(accountId_3, 3m);
+
+            var flushResponse = await Flush();
+            Assert.Equal(2, flushResponse[accountId_1]);
+            Assert.Equal(2, flushResponse[accountId_2]);
+            Assert.Equal(2, flushResponse[accountId_3]);
+
+            await AuthorizeAs(TestUser_1);
+            Assert.Equal(499m, await GetAccountValue());
+
+            await AuthorizeAs(TestUser_2);
+            Assert.Equal(499m, await GetAccountValue());
+
+            await AuthorizeAs(TestUser_3);
+            Assert.Equal(502m, await GetAccountValue());
+        }
     }
 }

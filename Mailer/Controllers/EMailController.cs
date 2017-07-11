@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Shared;
 
 namespace Mailer.Controllers
 {
@@ -9,5 +8,10 @@ namespace Mailer.Controllers
         {
             return Ok();
         }
+    }
+
+    public class Notification
+    {
+
     }
 }

@@ -1,6 +1,4 @@
-﻿using Shared;
-
-namespace AuthService.Data
+﻿namespace AuthService.Data
 {
     public class User
     {

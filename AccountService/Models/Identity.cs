@@ -1,4 +1,4 @@
-﻿namespace Shared
+﻿namespace AccountService.Models
 {
     public enum UserId : long
     {
