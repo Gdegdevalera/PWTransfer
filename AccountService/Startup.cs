@@ -43,6 +43,7 @@ namespace AccountService
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
+            var signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration["Auth:SecurityKey"]));
             app.UseJwtBearerAuthentication(new JwtBearerOptions
             {
                 AutomaticAuthenticate = true,
@@ -53,7 +54,7 @@ namespace AccountService
                     ValidateAudience = false,
                     ValidateIssuer = false,
 
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("asdkflju34ht734hg78vhasvdyq9364vavlajvn36qftqogw")),
+                    IssuerSigningKey = signingKey,
                     ValidateIssuerSigningKey = true,
                 }
             });

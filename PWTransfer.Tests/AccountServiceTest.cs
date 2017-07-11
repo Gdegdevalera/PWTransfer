@@ -17,5 +17,13 @@ namespace PWTransfer.Tests
             var response = await Account.SendAsync(request);
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
+
+        [Fact]
+        public async Task Create()
+        {
+            await AuthorizeAs(TestUser_1);
+            var response = await Account.PostAsync("/create", null);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
     }
 }
