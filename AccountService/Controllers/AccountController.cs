@@ -40,7 +40,7 @@ namespace AccountService.Controllers
             });
 
             await _accountDbContext.SaveChangesAsync();
-            return Ok();
+            return Ok(accountId);
         }
 
         [Route("/info")]

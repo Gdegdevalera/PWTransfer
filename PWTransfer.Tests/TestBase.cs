@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using RestSharp;
 using Scrypt;
 using System;
 using System.Collections.Generic;
@@ -48,13 +49,13 @@ namespace PWTransfer.Tests
             _accountServer = new TestServer(
                 new WebHostBuilder()
                     .UseStartup<AccountService.Startup>());
-
+                        
             Account = _accountServer.CreateClient();
 
             _authServer = new TestServer(
                 new WebHostBuilder()
                     .UseStartup<AuthService.Startup>());
-
+          
             Auth = _authServer.CreateClient();
         }
 
@@ -66,18 +67,23 @@ namespace PWTransfer.Tests
                 user.Token = await GetToken(user.Email, user.Password);
             }
 
+            Account.DefaultRequestHeaders.Clear();
             Account.DefaultRequestHeaders.Add("Authorization", "Bearer " + user.Token);
+        }
+
+        protected async Task<long> CreateAccount()
+        {
+            return await Account.PostAsync("/create", null).Content().ToLong();
         }
 
         private async Task<string> GetToken(string userEmail, string password)
         {
-            var formData = new FormUrlEncodedContent(new Dictionary<string, string>
+            var response = await Auth.PostFormAsync("/token", new Dictionary<string, string>
             {
                 { "Email", userEmail },
                 { "Password", password }
             });
 
-            var response = await Auth.PostAsync("/token", formData);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             return await response.Content.ReadAsStringAsync();
