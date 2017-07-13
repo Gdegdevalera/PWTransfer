@@ -30,12 +30,12 @@ namespace Mailer
                 optionBuilder.UseMailKit(new MailKitOptions()
                 {
                     Server = Configuration["Mailer:Server"],
-                    Port = Convert.ToInt32(Configuration["Mailer:Port"]),
+                    Port = int.Parse(Configuration["Mailer:Port"]),
                     SenderName = Configuration["Mailer:SenderName"],
                     SenderEmail = Configuration["Mailer:SenderEmail"],
                     Account = Configuration["Mailer:Account"],
                     Password = Configuration["Mailer:Password"],
-                    SSL = Convert.ToBoolean(Configuration["Mailer:UseSSL"])
+                    SSL = bool.Parse(Configuration["Mailer:UseSSL"])
                 });
             });
 

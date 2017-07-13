@@ -1,12 +1,15 @@
 ﻿using AccountService.Models;
+using AuthService.Service;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Scrypt;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
@@ -46,7 +49,7 @@ namespace PWTransfer.Tests
             Password = "13qw2387rt29f",
             Email = "test3@test.test"
         };
-
+        
         public TestBase()
         {
             Configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
@@ -62,7 +65,7 @@ namespace PWTransfer.Tests
             _authServer = new TestServer(
                 new WebHostBuilder()
                     .UseStartup<AuthService.Startup>());
-          
+
             Auth = _authServer.CreateClient();
         }
 

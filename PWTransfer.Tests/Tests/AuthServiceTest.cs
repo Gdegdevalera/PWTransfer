@@ -1,12 +1,35 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using System.Linq;
 using Xunit;
+using SmtpServer;
+using Microsoft.Extensions.Configuration;
+using SmtpServer.Storage;
+using System.Threading;
 
 namespace PWTransfer.Tests
 {
     public class AuthServiceTest : TestBase
     {
+        private readonly TestMessageStore _messageStore = new TestMessageStore();
+
+        public AuthServiceTest() : base()
+        {
+            var configuration = new ConfigurationBuilder()
+                   .AddJsonFile("appsettings.json")
+                   .Build();
+
+            var options = new OptionsBuilder()
+                .ServerName(configuration["Mailer:Server"])
+                .Port(int.Parse(configuration["Mailer:Port"]))
+                .MessageStore(_messageStore)
+                .Build();
+
+            var smtpServer = new SmtpServer.SmtpServer(options);
+            Task.Run(() => smtpServer.StartAsync(CancellationToken.None));
+        }
+        
         [Fact]
         public async Task Registration()
         {
@@ -21,6 +44,7 @@ namespace PWTransfer.Tests
             var response = await Auth.PostFormAsync("/register", formData);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(1, _messageStore.Transactions.Count());
         }
 
         [Fact]
