@@ -46,57 +46,22 @@ namespace AccountService.Controllers
         public IActionResult Info()
         {
             var accountId = GetUserId();
-
-            var accountInfo = _accountDbContext.Accounts
-                .Select(x => new AccountInfo { UserId = x.Id, Value = x.Value })
-                .FirstOrDefault(x => x.UserId == accountId);
+            var accountInfo = GetAccountInfo(accountId);
 
             if (accountInfo == null)
                 return NotFound();
 
-            // It's important to fetch changes with account value by single query
-            // Because flush operation can be executed between different queries
-            var changes = (from account in _accountDbContext.Accounts
-                           join change in _accountDbContext.LastAccountChanges
-                                on account.Id equals change.AccountId
-                           where account.Id == accountId
-                           select new
-                           {
-                               account.Id,
-                               account.Value,
-                               Change = change.Value
-                           }).ToList();
-
-            if (changes.Any())
-            {
-                var info = changes.Aggregate(new AccountInfo(), (accumulator, change) =>
-                            {
-                                if (accumulator.UserId == UserId.Unknown)
-                                {
-                                    accumulator.UserId = change.Id;
-                                    accumulator.Value = change.Value;
-                                }
-
-                                accumulator.Value += change.Change;
-
-                                return accumulator;
-                            });
-
-                return Json(info);
-            }
-            else
-            {
-                return Json(accountInfo);
-            }
+            return Json(accountInfo);
         }
 
         [HttpPost, Route("/send")]
         public async Task<IActionResult> Send(TransferAction model)
         {
-            if (Invalid(model.Amount))
+            var sender = GetUserId();
+
+            if (Invalid(model.Amount, sender))
                 return BadRequest();
 
-            var sender = GetUserId();
             var receiverExists = _accountDbContext.Accounts.Any(x => x.Id == model.Receiver);
 
             if (model.Receiver == sender || !receiverExists)
@@ -133,6 +98,51 @@ namespace AccountService.Controllers
             }
         }
 
+        private AccountInfo GetAccountInfo(UserId accountId)
+        {
+            var accountInfo = _accountDbContext.Accounts
+                .Select(x => new AccountInfo { UserId = x.Id, Value = x.Value })
+                .FirstOrDefault(x => x.UserId == accountId);
+
+            if (accountInfo == null)
+                return null;
+
+            // It's important to fetch changes with account value by single query
+            // Because flush operation can be executed between different queries
+            var changes = (from account in _accountDbContext.Accounts
+                           join change in _accountDbContext.LastAccountChanges
+                                on account.Id equals change.AccountId
+                           where account.Id == accountId
+                           select new
+                           {
+                               account.Id,
+                               account.Value,
+                               Change = change.Value
+                           }).ToList();
+
+            if (changes.Any())
+            {
+                var info = changes.Aggregate(new AccountInfo(), (accumulator, change) =>
+                {
+                    if (accumulator.UserId == UserId.Unknown)
+                    {
+                        accumulator.UserId = change.Id;
+                        accumulator.Value = change.Value;
+                    }
+
+                    accumulator.Value += change.Change;
+
+                    return accumulator;
+                });
+
+                return info;
+            }
+            else
+            {
+                return accountInfo;
+            }
+        }
+
         private UserId GetUserId()
         {
             try
@@ -146,12 +156,16 @@ namespace AccountService.Controllers
             }
         }
 
-        private bool Invalid(decimal amount)
+        private bool Invalid(decimal amount, UserId sender)
         {
             if (amount <= 0)
                 return true;
 
-            return amount != Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+            if (amount != Math.Round(amount, 2, MidpointRounding.AwayFromZero))
+                return true;
+
+            var value = GetAccountInfo(sender).Value;
+            return value - amount < 0;
         }
     }
 }

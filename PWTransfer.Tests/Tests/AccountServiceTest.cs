@@ -41,11 +41,7 @@ namespace PWTransfer.Tests
             await AuthorizeAs(TestUser_2);
             var accountId_2 = await CreateAccount();
             
-            var response = await Account.PostFormAsync("/send", new Dictionary<string, string>
-            {
-                { "Receiver", accountId_1.ToString() },
-                { "Amount", 10m.ToString() },
-            });
+            var response = await Send(accountId_1, 10m);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             Assert.Equal(490m, await GetAccountValue());
@@ -72,6 +68,58 @@ namespace PWTransfer.Tests
             Assert.Equal(500.01m, await GetAccountValue());
         }
 
+        [Fact]
+        public async Task TransferVaBanque()
+        {
+            await AuthorizeAs(TestUser_1);
+            var accountId_1 = await CreateAccount();
+
+            await AuthorizeAs(TestUser_2);
+            var accountId_2 = await CreateAccount();
+
+            var value = await GetAccountValue();
+            var response = await Send(accountId_1, value);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            Assert.Equal(0, await GetAccountValue());
+        }
+
+        [Fact]
+        public async Task TransferMoreThanHave()
+        {
+            await AuthorizeAs(TestUser_1);
+            var accountId_1 = await CreateAccount();
+
+            await AuthorizeAs(TestUser_2);
+            var accountId_2 = await CreateAccount();
+
+            var value = await GetAccountValue();
+            var response = await Send(accountId_1, value + 0.01m);
+            var afterActionValue = await GetAccountValue();
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(value, afterActionValue);
+        }
+
+        [Fact]
+        public async Task TransferMoreThanHaveByTwoPhases()
+        {
+            await AuthorizeAs(TestUser_1);
+            var accountId_1 = await CreateAccount();
+
+            await AuthorizeAs(TestUser_2);
+            var accountId_2 = await CreateAccount();
+
+            var value = await GetAccountValue();
+
+            await Send(accountId_1, value);
+            var response = await Send(accountId_1, 0.01m);
+            var afterActionValue = await GetAccountValue();
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(0, afterActionValue);
+        }
+
         [Theory]
         [InlineData(1.001)]
         [InlineData(1.009)]
@@ -85,8 +133,13 @@ namespace PWTransfer.Tests
             await AuthorizeAs(TestUser_2);
             var accountId_2 = await CreateAccount();
 
+            var value = await GetAccountValue();
+
             var response = await Send(accountId_1, amount);
+            var afterActionValue = await GetAccountValue();
+
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(value, afterActionValue);
         }
 
         [Fact]
@@ -94,9 +147,13 @@ namespace PWTransfer.Tests
         {
             await AuthorizeAs(TestUser_1);
             var accountId = await CreateAccount();
+            var value = await GetAccountValue();
 
             var response = await Send(accountId, 1);
+            var afterActionValue = await GetAccountValue();
+
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(value, afterActionValue);
         }
 
         [Fact]
@@ -105,8 +162,13 @@ namespace PWTransfer.Tests
             await AuthorizeAs(TestUser_1);
             var accountId = await CreateAccount();
 
+            var value = await GetAccountValue();
+
             var response = await Send((UserId)8, 1);
+            var afterActionValue = await GetAccountValue();
+
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(value, afterActionValue);
         }
 
         [Fact]
