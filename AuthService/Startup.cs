@@ -29,6 +29,7 @@ namespace AuthService
                       options.UseSqlServer(Configuration.GetConnectionString("AuthService")));
                         
             services.AddSingleton<IJwtGenerator>(new JwtGenerator(Configuration["Auth:SecurityKey"]));
+            services.AddSingleton(typeof(IMailService), typeof(MailService));
             services.AddMvc();
         }
 

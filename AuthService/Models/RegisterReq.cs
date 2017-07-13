@@ -2,7 +2,7 @@
 
 namespace AuthService.Models
 {
-    public class RegisterModel
+    public class RegisterReq
     {
         [Required]
         public string Name { get; set; }
