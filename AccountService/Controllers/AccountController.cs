@@ -24,8 +24,7 @@ namespace AccountService.Controllers
             _logger = loggerFactory.CreateLogger<AccountController>();
         }
 
-        [Route("/create")]
-        [HttpPost]
+        [HttpPost, Route("/create")]
         public async Task<IActionResult> Create()
         {
             var accountId = GetUserId();
@@ -43,7 +42,7 @@ namespace AccountService.Controllers
             return Ok(accountId);
         }
 
-        [Route("/info")]
+        [HttpGet, Route("/info")]
         public IActionResult Info()
         {
             var accountId = GetUserId();
@@ -91,8 +90,7 @@ namespace AccountService.Controllers
             }
         }
 
-        [Route("/send")]
-        [HttpPost]
+        [HttpPost, Route("/send")]
         public async Task<IActionResult> Send(TransferAction model)
         {
             if (Invalid(model.Amount))

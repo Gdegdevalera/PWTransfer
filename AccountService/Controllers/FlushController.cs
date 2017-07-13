@@ -16,9 +16,8 @@ namespace AccountService.Controllers
             _accountDbContext = accountDbContext;
             _logger = loggerFactory.CreateLogger<FlushController>();
         }
-
-        [HttpPost]
-        [Route("/flush")]
+        
+        [HttpPost, Route("/flush")]
         public async Task<IActionResult> Flush()
         {
             _logger.LogInformation("Flushing...");

@@ -18,8 +18,7 @@ namespace AuthService.Controllers
             _jwtGenerator = jwtGenerator;
         }
 
-        [HttpPost]
-        [Route("/token")]
+        [HttpPost, Route("/token")]
         public IActionResult Token()
         {
             var email = Request.Form["email"].Single();

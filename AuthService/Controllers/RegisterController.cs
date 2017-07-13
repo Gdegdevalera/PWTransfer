@@ -16,8 +16,7 @@ namespace AuthService.Controllers
             _userDbContext = userDbContext;
         }
 
-        [HttpPost]
-        [Route("/register")]
+        [HttpPost, Route("/register")]
         public async Task<IActionResult> Register(Models.RegisterModel model)
         {
             if (!ModelState.IsValid)
