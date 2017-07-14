@@ -11,5 +11,7 @@
         public string PasswordHash { get; set; }
 
         public UserState State { get; set; }
+
+        public string ConirmationToken { get; set; }
     }
 }

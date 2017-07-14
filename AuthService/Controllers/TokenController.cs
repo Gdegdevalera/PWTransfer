@@ -27,11 +27,11 @@ namespace AuthService.Controllers
             if (user == null)
                 return NotFound();
 
-            if (!model.Password.Verify(user.PasswordHash))
-                return BadRequest();
-
             if (user.State != UserState.Active)
                 return StatusCode(StatusCodes.Status406NotAcceptable);
+
+            if (!model.Password.Verify(user.PasswordHash))
+                return BadRequest();
 
             var jwt = _jwtGenerator.GenerateJwt(user);
 

@@ -8,12 +8,15 @@ using SmtpServer.Authentication;
 using SmtpServer.Mail;
 using System.IO;
 using MimeKit;
+using System.Linq;
+using System;
 
 namespace PWTransfer.Tests
 {
     public class TestMessageStore : MessageStore
     {
         public List<MimeMessage> Messages { get; private set; }
+        public readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
 
         public TestMessageStore()
         {
@@ -26,7 +29,16 @@ namespace PWTransfer.Tests
             var message = MimeMessage.Load(textMessage.Content);
 
             Messages.Add(message);
+            _semaphore.Release();
             return Task.FromResult(SmtpResponse.Ok);
+        }
+
+        public async Task<MimeMessage> WaitForMail()
+        {
+            var cancelTokenSource = new CancellationTokenSource();
+            cancelTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
+            await _semaphore.WaitAsync(cancelTokenSource.Token);
+            return Messages.LastOrDefault();
         }
     }
 

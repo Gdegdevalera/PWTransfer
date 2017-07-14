@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
-using System.Linq;
 using Xunit;
 using SmtpServer;
 using Microsoft.Extensions.Configuration;
-using SmtpServer.Storage;
 using System.Threading;
 using System.Text.RegularExpressions;
 
@@ -36,8 +34,8 @@ namespace PWTransfer.Tests
         [Fact]
         public async Task Registration()
         {
-            const string email = "email@email.ru";
-            const string password = "123qwe";
+            const string email = "register_email@email.ru";
+            const string password = "123qwe1";
 
             var registerFormData = new Dictionary<string, string>
             {
@@ -56,11 +54,11 @@ namespace PWTransfer.Tests
                 { "Password", password }
             };
 
-            var loginResponse = await Auth.PostFormAsync("/login", loginFormData);
-            Assert.Equal(HttpStatusCode.NotAcceptable, loginResponse.StatusCode);
-            
+            var mail = await _messageStore.WaitForMail();
+            Assert.NotNull(mail);
+
             var tokenExtractor = new Regex(@"confirm\/(.*)['""]");
-            var confirmationMessage = _messageStore.Messages.Single().Body.ToString();
+            var confirmationMessage = mail.Body.ToString();
             var confirmationToken = tokenExtractor.Matches(confirmationMessage)[0].Groups[1].Value;
             Assert.NotEmpty(confirmationToken);
 
@@ -70,10 +68,10 @@ namespace PWTransfer.Tests
                 { "Token", confirmationToken }
             };
 
-            var confirmResponse = await Auth.PostFormAsync("/confirm", loginFormData);
+            var confirmResponse = await Auth.PostFormAsync("/confirm", confirmFormData);
             Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
 
-            loginResponse = await Auth.PostFormAsync("/login", loginFormData);
+            var loginResponse = await Auth.PostFormAsync("/login", loginFormData);
             var token = await loginResponse.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);

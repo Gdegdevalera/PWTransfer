@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using AuthService.Service;
 using AuthService.Models;
+using System;
 
 namespace AuthService.Controllers
 {
@@ -30,16 +31,42 @@ namespace AuthService.Controllers
             if (_userDbContext.Users.Any(x => x.Email == model.Email))
                 return StatusCode(StatusCodes.Status409Conflict);
 
+            var confirmationToken = GenerateToken();
             _userDbContext.Users.Add(new User
             {
                 Email = model.Email,
                 Name = model.Name,
                 PasswordHash = model.Password.Hash(),
-                State = UserState.EmailConfirmation
+                State = UserState.EmailConfirmation,
+                ConirmationToken = confirmationToken
             });
 
             await _userDbContext.SaveChangesAsync();
-            await _mailService.SendEmailConfirmation(model.Email, model.Email.Hash());
+            await _mailService.SendEmailConfirmation(model.Email, confirmationToken);
+
+            return Ok();
+        }
+
+        [HttpPost, Route("/confirm")]
+        public async Task<IActionResult> Confirm(EmailConfirmReq model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var user = _userDbContext.Users.FirstOrDefault(x => x.Email == model.Email);
+
+            if (user == null)
+                return NotFound();
+
+            if (user.State != UserState.EmailConfirmation)
+                return StatusCode(StatusCodes.Status422UnprocessableEntity);
+
+            if (string.Compare(user.ConirmationToken, model.Token, ignoreCase: true) != 0)
+                return BadRequest("Invalid token");
+
+            user.State = UserState.Active;
+            user.ConirmationToken = null;
+            await _userDbContext.SaveChangesAsync();
 
             return Ok();
         }
@@ -59,29 +86,6 @@ namespace AuthService.Controllers
                 return BadRequest();
 
             user.PasswordHash = model.NewPassword.Hash();
-            await _userDbContext.SaveChangesAsync();
-
-            return Ok();
-        }
-
-        [HttpPost, Route("/confirm")]
-        public async Task<IActionResult> Confirm(EmailConfirmReq model)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            var user = _userDbContext.Users.FirstOrDefault(x => x.Email == model.Email);
-
-            if (user == null)
-                return NotFound();
-
-            if (user.State != UserState.EmailConfirmation)
-                return StatusCode(StatusCodes.Status422UnprocessableEntity);
-
-            if (!user.Email.Verify(model.Token))
-                return BadRequest("Invalid token");
-
-            user.State = UserState.Active;
             await _userDbContext.SaveChangesAsync();
 
             return Ok();
@@ -118,6 +122,11 @@ namespace AuthService.Controllers
 
             throw new System.Exception();
             return Ok();
+        }
+
+        private static string GenerateToken()
+        {
+            return Guid.NewGuid().ToString().Replace("-", "");
         }
     }
 }
