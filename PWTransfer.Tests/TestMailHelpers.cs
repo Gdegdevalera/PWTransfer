@@ -13,11 +13,11 @@ namespace PWTransfer.Tests
 {
     public class TestMessageStore : MessageStore
     {
-        public List<MimeMessage> Transactions { get; private set; }
+        public List<MimeMessage> Messages { get; private set; }
 
         public TestMessageStore()
         {
-            Transactions = new List<MimeMessage>();
+            Messages = new List<MimeMessage>();
         }
 
         public override Task<SmtpResponse> SaveAsync(ISessionContext context, IMessageTransaction transaction, CancellationToken cancellationToken)
@@ -25,7 +25,7 @@ namespace PWTransfer.Tests
             var textMessage = (ITextMessage)transaction.Message;
             var message = MimeMessage.Load(textMessage.Content);
 
-            Transactions.Add(message);
+            Messages.Add(message);
             return Task.FromResult(SmtpResponse.Ok);
         }
     }

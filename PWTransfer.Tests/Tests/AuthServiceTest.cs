@@ -7,6 +7,7 @@ using SmtpServer;
 using Microsoft.Extensions.Configuration;
 using SmtpServer.Storage;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace PWTransfer.Tests
 {
@@ -24,6 +25,8 @@ namespace PWTransfer.Tests
                 .ServerName(configuration["Mailer:Server"])
                 .Port(int.Parse(configuration["Mailer:Port"]))
                 .MessageStore(_messageStore)
+                .AllowUnsecureAuthentication()
+                .UserAuthenticator(new SampleUserAuthenticatorFactory())
                 .Build();
 
             var smtpServer = new SmtpServer.SmtpServer(options);
@@ -33,18 +36,48 @@ namespace PWTransfer.Tests
         [Fact]
         public async Task Registration()
         {
-            var formData = new Dictionary<string, string>
+            const string email = "email@email.ru";
+            const string password = "123qwe";
+
+            var registerFormData = new Dictionary<string, string>
             {
                 { "Name", "testName" },
-                { "Email", "email@email.ru" },
-                { "Password", "123qwe" },
-                { "ConfirmPassword", "123qwe" }
+                { "Email", email },
+                { "Password", password },
+                { "ConfirmPassword", password }
             };
 
-            var response = await Auth.PostFormAsync("/register", formData);
+            var registerResponse = await Auth.PostFormAsync("/register", registerFormData);
+            Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);     
+            
+            var loginFormData = new Dictionary<string, string>
+            {
+                { "Email", email },
+                { "Password", password }
+            };
 
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal(1, _messageStore.Transactions.Count());
+            var loginResponse = await Auth.PostFormAsync("/login", loginFormData);
+            Assert.Equal(HttpStatusCode.NotAcceptable, loginResponse.StatusCode);
+            
+            var tokenExtractor = new Regex(@"confirm\/(.*)['""]");
+            var confirmationMessage = _messageStore.Messages.Single().Body.ToString();
+            var confirmationToken = tokenExtractor.Matches(confirmationMessage)[0].Groups[1].Value;
+            Assert.NotEmpty(confirmationToken);
+
+            var confirmFormData = new Dictionary<string, string>
+            {
+                { "Email", email },
+                { "Token", confirmationToken }
+            };
+
+            var confirmResponse = await Auth.PostFormAsync("/confirm", loginFormData);
+            Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
+
+            loginResponse = await Auth.PostFormAsync("/login", loginFormData);
+            var token = await loginResponse.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+            Assert.NotEmpty(token);
         }
 
         [Fact]

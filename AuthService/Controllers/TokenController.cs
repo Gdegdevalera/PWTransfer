@@ -4,6 +4,7 @@ using AuthService.Data;
 using AuthService.Service;
 using AuthService.Extensions;
 using Microsoft.AspNetCore.Http;
+using AuthService.Models;
 
 namespace AuthService.Controllers
 {
@@ -18,18 +19,15 @@ namespace AuthService.Controllers
             _jwtGenerator = jwtGenerator;
         }
 
-        [HttpPost, Route("/token")]
-        public IActionResult Token()
+        [HttpPost, Route("/login")]
+        public IActionResult Login(LoginReq model)
         {
-            var email = Request.Form["email"].Single();
-            var password = Request.Form["password"].Single();
-
-            var user = _userDbContext.Users.FirstOrDefault(x => x.Email == email);
+            var user = _userDbContext.Users.FirstOrDefault(x => x.Email == model.Email);
 
             if (user == null)
                 return NotFound();
 
-            if (!password.Verify(user.PasswordHash))
+            if (!model.Password.Verify(user.PasswordHash))
                 return BadRequest();
 
             if (user.State != UserState.Active)

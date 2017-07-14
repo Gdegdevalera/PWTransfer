@@ -9,6 +9,7 @@ using AuthService.Models;
 
 namespace AuthService.Controllers
 {
+    [RequireHttps]
     public class RegisterController : Controller
     {
         private readonly UserDbContext _userDbContext;
@@ -38,8 +39,27 @@ namespace AuthService.Controllers
             });
 
             await _userDbContext.SaveChangesAsync();
-
             await _mailService.SendEmailConfirmation(model.Email, model.Email.Hash());
+
+            return Ok();
+        }
+
+        [HttpPost, Route("/changePassword")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordReq model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var user = _userDbContext.Users.FirstOrDefault(x => x.Email == model.Email);
+
+            if (user == null)
+                return NotFound();
+
+            if (!model.CurrentPassword.Verify(user.PasswordHash))
+                return BadRequest();
+
+            user.PasswordHash = model.NewPassword.Hash();
+            await _userDbContext.SaveChangesAsync();
 
             return Ok();
         }
@@ -62,12 +82,10 @@ namespace AuthService.Controllers
                 return BadRequest("Invalid token");
 
             user.State = UserState.Active;
-
             await _userDbContext.SaveChangesAsync();
 
             return Ok();
         }
-
 
         [HttpPost, Route("/resendConfirmation")]
         public async Task<IActionResult> ResendConfirmation(ResendConfirmationReq model)
@@ -87,8 +105,8 @@ namespace AuthService.Controllers
             return Ok();
         }
 
-        [HttpPost, Route("/forgotPassword")]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordReq model)
+        [HttpPost, Route("/resetPassword")]
+        public async Task<IActionResult> ResetPassword(ForgotPasswordReq model)
         {
             if (!ModelState.IsValid)
                 return BadRequest();

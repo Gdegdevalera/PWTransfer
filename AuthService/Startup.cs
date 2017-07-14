@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using AuthService.Data;
 using AuthService.Service;
+using NETCore.MailKit.Extensions;
+using NETCore.MailKit.Infrastructure.Internal;
 
 namespace AuthService
 {
@@ -27,9 +29,24 @@ namespace AuthService
         {
             services.AddDbContext<UserDbContext>(options =>
                       options.UseSqlServer(Configuration.GetConnectionString("AuthService")));
-                        
+
+            services.AddMailKit(optionBuilder =>
+            {
+                optionBuilder.UseMailKit(new MailKitOptions()
+                {
+                    Server = Configuration["Mailer:Server"],
+                    Port = int.Parse(Configuration["Mailer:Port"]),
+                    SenderName = Configuration["Mailer:SenderName"],
+                    SenderEmail = Configuration["Mailer:SenderEmail"],
+                    Account = Configuration["Mailer:Account"],
+                    Password = Configuration["Mailer:Password"],
+                    SSL = bool.Parse(Configuration["Mailer:UseSSL"])
+                });
+            });
+
             services.AddSingleton<IJwtGenerator>(new JwtGenerator(Configuration["Auth:SecurityKey"]));
             services.AddSingleton(typeof(IMailService), typeof(MailService));
+            services.AddSingleton<IConfiguration>(Configuration);
             services.AddMvc();
         }
 

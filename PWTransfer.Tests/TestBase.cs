@@ -59,14 +59,17 @@ namespace PWTransfer.Tests
             _accountServer = new TestServer(
                 new WebHostBuilder()
                     .UseStartup<AccountService.Startup>());
-                        
+
             Account = _accountServer.CreateClient();
 
             _authServer = new TestServer(
                 new WebHostBuilder()
-                    .UseStartup<AuthService.Startup>());
+                    .UseStartup<AuthService.Startup>()
+                    .UseUrls("https:\\localhost"));
 
+            _authServer.BaseAddress = new Uri(_authServer.BaseAddress.AbsoluteUri.Replace("http", "https"));
             Auth = _authServer.CreateClient();
+            Auth.BaseAddress = _authServer.BaseAddress;
         }
 
         protected async Task AuthorizeAs(TestUser user)
@@ -107,7 +110,7 @@ namespace PWTransfer.Tests
 
         private async Task<string> GetToken(string userEmail, string password)
         {
-            var response = await Auth.PostFormAsync("/token", new Dictionary<string, string>
+            var response = await Auth.PostFormAsync("/login", new Dictionary<string, string>
             {
                 { "Email", userEmail },
                 { "Password", password }
